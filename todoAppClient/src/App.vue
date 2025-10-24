@@ -5,6 +5,21 @@
   <div class="container py-4">
     <h2 class="text-center mb-4">Lista zadań</h2>
 
+    <div class="mb-5">
+      <i class="fas fa-calendar"></i>
+      <span class="font-weight-bold">
+        Na dzień
+      </span>
+        <input
+          v-model="filterDate"
+          @change="filterTodos"
+          type="date"
+          class="form-control"
+          required
+        >
+    </div>
+
+    <h5 class="text-center mb-4">Dodaj zadanie</h5>
     <form @submit.prevent="addTodo" class="row g-3 mb-4">
       <div class="col-md-6">
         <input
@@ -108,6 +123,8 @@ export default defineComponent({
   },
   setup() {
     const todos = ref<Todo[]>([]);
+    const filterDate = ref(new Date().toISOString().slice(0, 10));
+
     const newDesc = ref("");
     const newDate = ref("");
 
@@ -120,9 +137,14 @@ export default defineComponent({
       duration: 3000,
     });
 
-    const getAllTodos = async (): Promise<void> => {
+    const getAllTodos = async (filterDate: string): Promise<void> => {
       try {
-        const response = await axios.get<Todo[]>(`${API_URL}/api/Todo/GetTodos`);
+        const response = await axios.get<Todo[]>(`${API_URL}/api/Todo/GetTodos`, {
+          params:{
+            filterDate: filterDate,
+          },
+        });
+
         todos.value = response.data;
       } catch (error) {
         console.error("Błąd pobierania danych:", error);
@@ -146,7 +168,7 @@ export default defineComponent({
 
         toaster.success("Dodano zadanie"); 
 
-        getAllTodos();
+        getAllTodos(filterDate.value);
         
         newDesc.value = "";
         newDate.value = "";
@@ -171,7 +193,7 @@ export default defineComponent({
         if(response.status == 200){
           toaster.success("Usunięto zadanie");  
 
-          getAllTodos();
+          getAllTodos(filterDate.value);
         }else{
           toaster.error("Wystąpił błąd podczas usuwania"); 
         }
@@ -200,10 +222,14 @@ export default defineComponent({
         toaster.success("Zapisano zmiany");  
 
         cancelEdit();
-        getAllTodos();
+        getAllTodos(filterDate.value);
       }else{
         toaster.error("Wystąpił błąd podczas edycji"); 
       }
+    }
+
+    const filterTodos = async ():Promise<void> =>{
+        getAllTodos(filterDate.value);
     }
 
     //#region Edit view togglers
@@ -224,10 +250,10 @@ export default defineComponent({
     
 
     onMounted(() =>{
-      getAllTodos();
+      getAllTodos(filterDate.value);
     })
 
-    return { todos,newDesc, newDate, editId, editDesc, editDate, getAllTodos, addTodo, deleteTodo, updateTodo, startEdit, cancelEdit };
+    return { todos, filterDate, newDesc, newDate, editId, editDesc, editDate, getAllTodos, addTodo, deleteTodo, updateTodo,filterTodos, startEdit, cancelEdit };
   }
 });
 </script>
