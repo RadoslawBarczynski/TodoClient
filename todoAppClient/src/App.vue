@@ -3,11 +3,11 @@
 
 <template>
   <div class="container py-4">
-    <h2 class="text-center mb-4">Lista zadań</h2>
+    <h2 class="text-center mb-4 text-white">Lista zadań</h2>
 
     <div class="mb-5">
-      <i class="fas fa-calendar"></i>
-      <span class="font-weight-bold">
+      <i class="fas fa-calendar text-white"></i>
+      <span class="font-weight-bold text-white">
         Na dzień
       </span>
         <input
@@ -19,7 +19,7 @@
         >
     </div>
 
-    <h5 class="text-center mb-4">Dodaj zadanie</h5>
+    <h5 class="text-center mb-4 text-white">Dodaj zadanie</h5>
     <form @submit.prevent="addTodo" class="row g-3 mb-4">
       <div class="col-md-6">
         <input
@@ -71,10 +71,15 @@
         </template>
       <!-- Select template -->
         <template v-else>
-          <span>
-            <strong>{{ todo.description }}</strong>
-            <small class="text-muted"> ({{ formatDate(todo.date) }})</small>
-          </span>
+          <div class="d-flex gap-2">
+            <div class="form-check">
+              <input class="form-check-input" @change="checkTodo(todo.id)" type="checkbox" v-model="todo.completedP" id="flexCheckDefault">
+            </div>
+            <span>
+              <strong>{{ todo.description }}</strong>
+              <small class="text-muted"> ({{ formatDate(todo.date) }})</small>
+            </span>
+          </div>
 
           <div class="btn-group">
             <button class="btn btn-outline-primary btn-sm" @click="startEdit(todo)">
@@ -89,7 +94,7 @@
     </ul>
 
     <p v-if="todos.length === 0" class="text-center text-muted mt-3">
-      Brak zadań. Dodaj coś wyżej.
+      Brak zadań tego dnia.
     </p>
   </div>
 </template>
@@ -97,9 +102,9 @@
 <script lang="ts">
 interface Todo{
   id: string,
-  created_at: Date,
   description: string,
   date: string,
+  completedP: boolean
 }
 
 interface NewTodo {
@@ -124,6 +129,8 @@ export default defineComponent({
   setup() {
     const todos = ref<Todo[]>([]);
     const filterDate = ref(new Date().toISOString().slice(0, 10));
+
+    const completedP = ref(false);
 
     const newDesc = ref("");
     const newDate = ref("");
@@ -219,7 +226,7 @@ export default defineComponent({
       const response = await axios.post(`${API_URL}/api/Todo/UpdateTodo`, formData);
 
       if(response.status == 200){
-        toaster.success("Zapisano zmiany");  
+        toaster.success("Zapisano zmiany"); 
 
         cancelEdit();
         getAllTodos(filterDate.value);
@@ -230,6 +237,20 @@ export default defineComponent({
 
     const filterTodos = async ():Promise<void> =>{
         getAllTodos(filterDate.value);
+    }
+
+    const checkTodo = async (id: string):Promise<void> =>{
+        const formData = new FormData();
+        const jsonId = id;
+        formData.append("jsonId", jsonId)
+
+        const response = await axios.post(`${API_URL}/api/Todo/CheckTodo`, formData);
+
+        if(response.status == 200){
+          toaster.success("Wykonano");  
+        }else{
+          toaster.error("Wystąpił błąd podczas zaznaczania"); 
+        }
     }
 
     //#region Edit view togglers
@@ -253,7 +274,8 @@ export default defineComponent({
       getAllTodos(filterDate.value);
     })
 
-    return { todos, filterDate, newDesc, newDate, editId, editDesc, editDate, getAllTodos, addTodo, deleteTodo, updateTodo,filterTodos, startEdit, cancelEdit };
+    return { todos, filterDate, completedP, newDesc, newDate, editId, editDesc, editDate, getAllTodos, addTodo, deleteTodo, updateTodo,
+      filterTodos, checkTodo, startEdit, cancelEdit };
   }
 });
 </script>
