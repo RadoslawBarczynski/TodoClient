@@ -116,7 +116,7 @@ interface NewTodo {
 import { defineComponent, ref, onMounted } from "vue";
 import { createToaster } from "@meforma/vue-toaster";
 import axios from "axios";
-const API_URL = 'http://localhost:5231';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default defineComponent({
   name: "App",
